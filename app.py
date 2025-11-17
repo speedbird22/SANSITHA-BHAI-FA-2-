@@ -66,25 +66,27 @@ age_data = {
     "65+ years": {"ml": 1850, "cups": 7, "color": "#FFA94D"}
 }
 
-# ====================== STEP 1: AGE SELECTION (CLICKABLE CUSTOM BUTTONS) ======================
+# ====================== STEP 1: AGE SELECTION ======================
 if st.session_state.step == "age_selection":
     st.markdown("<h1 class='big-title'>WaterBuddy</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; font-size:24px; color:#1A1A1A; margin-bottom:40px;'>Choose your age group to get started!</p>", unsafe_allow_html=True)
-    
+
     cols = st.columns(4)
     for idx, (age, data) in enumerate(age_data.items()):
         with cols[idx]:
-            # Hidden button with unique key
-            if st.button("Select", key=f"age_{age.replace('–', '_').replace('+', 'plus')}"):
+
+            # Hidden internal button with wrapper ID
+            st.markdown(f"<div id='btn_{idx}'></div>", unsafe_allow_html=True)
+            if st.button("Select", key=f"hidden_age_btn_{idx}"):
                 st.session_state.age_group = age
                 st.session_state.goal = data['ml']
                 st.session_state.step = "goal_slider"
                 st.rerun()
-            
-            # Custom clickable div
+
+            # Custom HTML clickable block
             st.markdown(f"""
-            <div class='age-btn' style='background:{data['color']};' 
-                 onclick="parent.document.querySelector('button[kind=secondary]:nth-of30({idx+1})').click();">
+            <div class='age-btn' style='background:{data['color']};'
+                 onclick="document.querySelector('#btn_{idx} button').click();">
                 <strong>{age}</strong><br>
                 ~{data['cups']} cups/day
             </div>
@@ -94,7 +96,7 @@ if st.session_state.step == "age_selection":
 elif st.session_state.step == "goal_slider":
     st.markdown("<div class='fade-in'>", unsafe_allow_html=True)
     st.markdown("<h2 class='big-title'>Set Your Daily Goal</h2>", unsafe_allow_html=True)
-    
+
     suggested = age_data[st.session_state.age_group]["ml"]
     goal = st.slider("Choose your daily water intake goal", 500, 4000, suggested, 100, "%d ml")
     st.session_state.goal = goal
@@ -118,12 +120,15 @@ elif st.session_state.step == "goal_slider":
     if st.button("Continue", use_container_width=True):
         st.session_state.step = "name_input"
         st.rerun()
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ====================== STEP 3: NAME INPUT ======================
 elif st.session_state.step == "name_input":
     st.markdown("<h2 class='big-title'>What should we call you?</h2>", unsafe_allow_html=True)
+
     name = st.text_input("", placeholder="Enter your name...", label_visibility="collapsed")
+
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("Let's Go!", disabled=not name.strip()):
@@ -133,37 +138,46 @@ elif st.session_state.step == "name_input":
 
 # ====================== STEP 4: DASHBOARD ======================
 elif st.session_state.step == "dashboard":
+
     st.markdown(f"<h1 class='big-title'>Hey {st.session_state.username}!</h1>", unsafe_allow_html=True)
-    
+
     total = st.session_state.total_intake
     goal = st.session_state.goal
+
     progress = min(100, total / goal * 100) if goal else 0
     remaining = max(0, goal - total)
 
-    st.markdown(f"<div class='progress-box'>{int(total)} ml / {goal} ml → <strong>{int(remaining)} ml</strong> left</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='progress-box'>{int(total)} ml / {goal} ml → <strong>{int(remaining)} ml</strong> left</div>",
+        unsafe_allow_html=True)
+
     st.progress(progress / 100)
 
+    # Mascot mood
     if progress >= 100:
-        mascot = "Celebrating"
+        mascot = "🎉"
         msg = "GOAL ACHIEVED! You're a hydration superstar!"
     elif progress >= 75:
-        mascot = "Happy"
+        mascot = "😄"
         msg = "Amazing! Almost there!"
     elif progress >= 50:
-        mascot = "Smiling"
+        mascot = "🙂"
         msg = "Great job! Over halfway!"
     elif progress > 0:
-        mascot = "Neutral"
+        mascot = "😐"
         msg = "Every sip counts! Keep going!"
     else:
-        mascot = "Sad"
+        mascot = "😟"
         msg = "Time to drink up! Your body needs it!"
 
     st.markdown(f"<div class='mascot'>{mascot}</div>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align:center; font-size:24px; color:#2E8B57;'><strong>{msg}</strong></p>", unsafe_allow_html=True)
+    st.markdown(
+        f"<p style='text-align:center; font-size:24px; color:#2E8B57;'><strong>{msg}</strong></p>",
+        unsafe_allow_html=True)
 
     st.markdown("### Add Water")
     cols = st.columns(4)
+
     for col, (label, ml) in zip(cols, [("Glass", 250), ("Small Bottle", 500), ("Medium Bottle", 1000), ("Large Bottle", 1500)]):
         with col:
             if st.button(f"{label}\n{ml} ml", use_container_width=True):
@@ -183,6 +197,7 @@ elif st.session_state.step == "dashboard":
             st.session_state.total_intake = 0
             st.success("New day started!")
             st.rerun()
+
     with col2:
         if st.button("View Full Summary", use_container_width=True):
             st.session_state.step = "summary"
@@ -190,7 +205,9 @@ elif st.session_state.step == "dashboard":
 
 # ====================== STEP 5: SUMMARY ======================
 elif st.session_state.step == "summary":
+
     st.markdown(f"<h1 class='big-title'>Summary for {st.session_state.username}</h1>", unsafe_allow_html=True)
+
     total = st.session_state.total_intake
     goal = st.session_state.goal
     progress = (total / goal * 100) if goal else 0
@@ -208,7 +225,9 @@ elif st.session_state.step == "summary":
         title = "Let's Try Harder"
         text = f"You drank {total} ml today. Aim for {goal} ml tomorrow!"
 
-    st.markdown(f"<div class='summary-box'><strong>{title}</strong><br><br>{text}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='summary-box'><strong>{title}</strong><br><br>{text}</div>",
+                unsafe_allow_html=True)
+
     if st.button("Back to Dashboard"):
         st.session_state.step = "dashboard"
         st.rerun()
