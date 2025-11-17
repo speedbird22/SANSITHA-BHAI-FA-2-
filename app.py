@@ -1,107 +1,97 @@
 import streamlit as st
+import random
 
-st.set_page_config(page_title="WaterBuddy", layout="wide")
-
-# -------------------------
-# CUSTOM CSS
-# -------------------------
-st.markdown("""
-<style>
-
-body {
-    background-color: #F7F0DE;
+# -------------------------------
+# Hydration recommendations by age group (ml)
+AGE_GROUPS = {
+    "Children (4-8 years)": 1200,
+    "Teens (9-13 years)": 1700,
+    "Adults (14-64 years)": 2200,
+    "Seniors (65+ years)": 1800,
 }
 
-/* Main title */
-h1 {
-    font-weight: 800 !important;
-}
+HYDRATION_TIPS = [
+    "Try drinking a glass of water before meals.",
+    "Keep a bottle on your desk as a reminder.",
+    "Start your morning with a glass of water.",
+    "Set small goals: one cup every hour.",
+    "Hydrate after exercise to recover faster."
+]
 
-/* AGE BUTTONS */
-.age-btn button {
-    background-color: #11141C !important;
-    color: white !important;
-    border-radius: 14px !important;
-    padding: 20px 18px !important;
-    font-size: 1.15rem !important;
-    width: 100% !important;
-    border: 2px solid transparent !important;
-}
-
-/* Hover effect */
-.age-btn button:hover {
-    background-color: #1A1E27 !important;
-    border: 2px solid #5A5FEE !important;
-    color: white !important;
-}
-
-/* Center text */
-.block-container {
-    padding-top: 2rem;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# -------------------------
-# SESSION STATE DEFAULTS
-# -------------------------
-if "step" not in st.session_state:
-    st.session_state.step = "age"
-
-if "age_group" not in st.session_state:
-    st.session_state.age_group = None
-
+# -------------------------------
+# Initialize session state
 if "goal" not in st.session_state:
-    st.session_state.goal = None
+    st.session_state.goal = 0
+if "total" not in st.session_state:
+    st.session_state.total = 0
 
+# -------------------------------
+# App Title
+st.title("💧 WaterBuddy: Your Daily Hydration Companion")
 
-# -------------------------
-# AGE DATA
-# -------------------------
-age_data = {
-    "4–8 years":   {"cups": 5, "ml": 1180},
-    "9–13 years":  {"cups": 7, "ml": 1650},
-    "14–64 years": {"cups": 9, "ml": 2100},
-    "65+ years":   {"cups": 7, "ml": 1650},
-}
+st.write("Track your hydration, get friendly feedback, and build healthier habits!")
 
+# -------------------------------
+# Age group selection
+age_group = st.selectbox("Select your age group:", list(AGE_GROUPS.keys()))
+default_goal = AGE_GROUPS[age_group]
 
-# -------------------------
-# STEP 1 — AGE SELECTION
-# -------------------------
-if st.session_state.step == "age":
+# Allow manual adjustment
+st.session_state.goal = st.number_input(
+    "Your daily water goal (ml):",
+    min_value=500,
+    max_value=4000,
+    value=default_goal,
+    step=100
+)
 
-    st.markdown("<h1 style='text-align:center;'>WaterBuddy</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align:center;'>Choose your age group to get started!</h3>", unsafe_allow_html=True)
-    st.write("")
+# -------------------------------
+# Logging intake
+col1, col2 = st.columns(2)
 
-    cols = st.columns(4)
+with col1:
+    if st.button("+250 ml"):
+        st.session_state.total += 250
 
-    for idx, (age, data) in enumerate(age_data.items()):
-        with cols[idx]:
+with col2:
+    manual_amount = st.number_input("Log custom amount (ml):", min_value=0, step=50)
+    if st.button("Add custom amount"):
+        st.session_state.total += manual_amount
 
-            st.markdown('<div class="age-btn">', unsafe_allow_html=True)
+# -------------------------------
+# Reset button
+if st.button("🔄 New Day (Reset)"):
+    st.session_state.total = 0
 
-            if st.button(f"{age} — {data['cups']} cups/day", key=f"age_{idx}"):
-                st.session_state.age_group = age
-                st.session_state.goal = data["ml"]
-                st.session_state.step = "goal_slider"
-                st.rerun()
+# -------------------------------
+# Calculations
+remaining = max(st.session_state.goal - st.session_state.total, 0)
+progress = min(st.session_state.total / st.session_state.goal, 1.0)
 
-            st.markdown('</div>', unsafe_allow_html=True)
+# -------------------------------
+# Visual feedback
+st.progress(progress)
 
+st.write(f"**Total intake so far:** {st.session_state.total} ml")
+st.write(f"**Remaining to goal:** {remaining} ml")
+st.write(f"**Progress:** {progress*100:.1f}%")
 
-# -------------------------
-# STEP 2 — GOAL SLIDER (placeholder)
-# -------------------------
-elif st.session_state.step == "goal_slider":
-    st.markdown("<h1 style='text-align:center;'>Daily Water Goal</h1>", unsafe_allow_html=True)
-    st.write(f"Selected Age Group: **{st.session_state.age_group}**")
-    st.write(f"Recommended Goal: **{st.session_state.goal} ml/day**")
+# -------------------------------
+# Motivational messages & mascot
+if progress == 0:
+    st.info("Let's start hydrating! 🚰")
+elif progress < 0.5:
+    st.info("Good start! Keep sipping 💦")
+elif progress < 0.75:
+    st.success("Nice! You're halfway there 😃")
+elif progress < 1.0:
+    st.success("Almost at your goal! 🌊")
+else:
+    st.balloons()
+    st.success("🎉 Congratulations! You hit your hydration goal!")
 
-    goal = st.slider("Adjust your daily water goal", 1000, 4000, st.session_state.goal)
-    
-    if st.button("Confirm Goal"):
-        st.write("Goal saved!")
-
+# -------------------------------
+# Random hydration tip
+st.write("---")
+st.write("💡 Tip of the day:")
+st.write(random.choice(HYDRATION_TIPS))
