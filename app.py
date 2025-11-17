@@ -63,7 +63,6 @@ if st.session_state.phase == 1:
     st.write("Your friendly daily hydration companion.")
     if st.button("Let's begin 💧"):
         st.session_state.phase = 2
-        st.experimental_rerun()
 
 # -------------------------------
 # Phase 2: Age selection
@@ -74,7 +73,6 @@ elif st.session_state.phase == 2:
             st.session_state.age_group = group
             st.session_state.goal = ml
             st.session_state.phase = 3
-            st.experimental_rerun()
 
 # -------------------------------
 # Phase 3: Goal confirmation
@@ -90,7 +88,6 @@ elif st.session_state.phase == 3:
     )
     if st.button("Continue ➡️"):
         st.session_state.phase = 4
-        st.experimental_rerun()
 
 # -------------------------------
 # Phase 4: Logging preference
@@ -101,12 +98,10 @@ elif st.session_state.phase == 4:
         if st.button("Quick log (+250 ml)"):
             st.session_state.log_pref = "quick"
             st.session_state.phase = 5
-            st.experimental_rerun()
     with col2:
         if st.button("Custom entry"):
             st.session_state.log_pref = "custom"
             st.session_state.phase = 5
-            st.experimental_rerun()
 
 # -------------------------------
 # Phase 5: Optional settings
@@ -116,7 +111,6 @@ elif st.session_state.phase == 5:
     st.session_state.mascot_on = st.checkbox("Enable mascot reactions", value=True)
     if st.button("Finish setup ✅"):
         st.session_state.phase = 6
-        st.experimental_rerun()
 
 # -------------------------------
 # Phase 6: Dashboard
@@ -130,17 +124,14 @@ elif st.session_state.phase == 6:
     with col1:
         if st.button("+250 ml"):
             st.session_state.total += 250
-            st.experimental_rerun()
     with col2:
         manual_amount = st.number_input("Log custom amount (ml):", min_value=0, step=50)
         if st.button("Add custom amount"):
             st.session_state.total += manual_amount
-            st.experimental_rerun()
 
     # Reset
     if st.button("🔄 New Day (Reset)"):
         st.session_state.total = 0
-        st.experimental_rerun()
 
     # Calculations
     remaining = max(st.session_state.goal - st.session_state.total, 0)
