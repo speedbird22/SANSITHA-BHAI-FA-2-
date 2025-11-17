@@ -4,23 +4,40 @@ import streamlit as st
 # ====================== CONFIG ======================
 st.set_page_config(page_title="WaterBuddy", page_icon="💧", layout="wide")
 
-# ====================== CSS: CREAM WHITE + DARK TEXT + FULL SCREEN ======================
+# ====================== CSS: CREAM WHITE + DARK TEXT + BIG BUTTONS ======================
 st.markdown("""
 <style>
     .stApp {background-color: #FFF8E7 !important; color: #1A1A1A !important;}
-    .big-title {font-size: 46px; font-weight: bold; text-align: center; color: #1E90FF; font-family: 'Comic Sans MS', cursive; margin: 20px 0;}
-    .age-btn {width: 100%; height: 120px; font-size: 22px; font-weight: bold; border-radius: 18px; margin: 15px 0; box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
-    .slider-label {font-size: 20px; font-weight: bold; color: #2E8B57; text-align: center;}
-    .mascot {font-size: 100px; text-align: center; margin: 25px 0;}
-    .progress-box {background: #E0F7FA; padding: 18px; border-radius: 15px; text-align: center; font-size: 22px; font-weight: bold; color: #1A1A1A;}
-    .water-btn {background: linear-gradient(45deg, #4FC3F7, #29B6F6); color: white; font-weight: bold; border-radius: 15px; padding: 18px; font-size: 18px; height: 90px;}
+    .big-title {font-size: 50px; font-weight: bold; text-align: center; color: #1E90FF; font-family: 'Comic Sans MS', cursive; margin: 30px 0;}
+    .age-btn {
+        width: 100%; 
+        height: 140px; 
+        font-size: 26px; 
+        font-weight: bold; 
+        border-radius: 20px; 
+        margin: 20px 0; 
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        color: white !important;
+        padding: 10px;
+    }
+    .age-btn:hover {transform: scale(1.05); box-shadow: 0 8px 16px rgba(0,0,0,0.2);}
+    .slider-label {font-size: 22px; font-weight: bold; color: #2E8B57; text-align: center;}
+    .mascot {font-size: 110px; text-align: center; margin: 30px 0;}
+    .progress-box {background: #E0F7FA; padding: 20px; border-radius: 18px; text-align: center; font-size: 24px; font-weight: bold; color: #1A1A1A;}
+    .water-btn {
+        background: linear-gradient(45deg, #4FC3F7, #29B6F6); 
+        color: white; 
+        font-weight: bold; 
+        border-radius: 18px; 
+        padding: 20px; 
+        font-size: 20px; 
+        height: 100px;
+    }
     .water-btn:hover {background: #0288D1; transform: scale(1.03);}
-    .summary-box {background: #E8F5E9; padding: 20px; border-radius: 15px; font-size: 19px; color: #1A1A1A;}
+    .summary-box {background: #E8F5E9; padding: 25px; border-radius: 18px; font-size: 20px; color: #1A1A1A;}
     .fade-in {animation: fadeIn 1.2s ease-in;}
-    .fade-out {animation: fadeOut 0.8s ease-out forwards;}
-    @keyframes fadeIn {from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);}}
-    @keyframes fadeOut {from {opacity: 1;} to {opacity: 0; transform: translateY(-20px);}}
-    .stButton > button {width: 100%; margin: 10px 0;}
+    @keyframes fadeIn {from {opacity: 0; transform: translateY(30px);} to {opacity: 1; transform: translateY(0);}}
+    .stButton > button {width: 100%; margin: 15px 0;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -36,24 +53,24 @@ if 'total_intake' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state.username = ""
 
-# Age data
+# Age data with colors
 age_data = {
-    "4–8 years": {"ml": 1200, "cups": 5, "color": "#FF9999"},
-    "9–13 years": {"ml": 1700, "cups": 7, "color": "#66B2FF"},
-    "14–64 years": {"ml": 2250, "cups": 9, "color": "#99FF99"},
-    "65+ years": {"ml": 1850, "cups": 7, "color": "#FFCC99"}
+    "4–8 years": {"ml": 1200, "cups": 5, "color": "#FF6B9D"},
+    "9–13 years": {"ml": 1700, "cups": 7, "color": "#4DABF7"},
+    "14–64 years": {"ml": 2250, "cups": 9, "color": "#51CF66"},
+    "65+ years": {"ml": 1850, "cups": 7, "color": "#FFA94D"}
 }
 
 # ====================== STEP 1: AGE SELECTION ======================
 if st.session_state.step == "age_selection":
     st.markdown("<h1 class='big-title'>WaterBuddy</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:22px; color:#1A1A1A;'>Choose your age group to get started!</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:24px; color:#1A1A1A; margin-bottom:40px;'>Choose your age group to get started!</p>", unsafe_allow_html=True)
     
     cols = st.columns(4)
     for idx, (age, data) in enumerate(age_data.items()):
         with cols[idx]:
             if st.button(
-                f"**{age}**\n💧 ~{data['cups']} cups/day",
+                f"**{age}**\n\n~{data['cups']} cups/day",
                 key=age,
                 help=f"Recommended: {data['ml']} ml",
                 use_container_width=True
@@ -62,7 +79,13 @@ if st.session_state.step == "age_selection":
                 st.session_state.goal = data['ml']
                 st.session_state.step = "goal_slider"
                 st.rerun()
-        # NO COLOR LINES — REMOVED
+        # Colored button background
+        st.markdown(f"""
+        <div class='age-btn' style='background:{data['color']};'>
+            <strong>{age}</strong><br>
+            ~{data['cups']} cups/day
+        </div>
+        """, unsafe_allow_html=True)
 
 # ====================== STEP 2: GOAL SLIDER ======================
 elif st.session_state.step == "goal_slider":
@@ -135,23 +158,23 @@ elif st.session_state.step == "dashboard":
     
     # Mascot
     if progress >= 100:
-        mascot = "🎉"
+        mascot = "Celebrating"
         msg = "GOAL ACHIEVED! You're a hydration superstar!"
     elif progress >= 75:
-        mascot = ""
+        mascot = "Happy"
         msg = "Amazing! Almost there!"
     elif progress >= 50:
-        mascot = ""
+        mascot = "Smiling"
         msg = "Great job! Over halfway!"
     elif progress > 0:
-        mascot = ""
+        mascot = "Neutral"
         msg = "Every sip counts! Keep going!"
     else:
-        mascot = ""
+        mascot = "Sad"
         msg = "Time to drink up! Your body needs it!"
     
     st.markdown(f"<div class='mascot'>{mascot}</div>", unsafe_allow_html=True)
-    st.markdown(f"<p style='text-align:center; font-size:22px; color:#2E8B57;'><strong>{msg}</strong></p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; font-size:24px; color:#2E8B57;'><strong>{msg}</strong></p>", unsafe_allow_html=True)
     
     # Water buttons
     st.markdown("### Add Water")
