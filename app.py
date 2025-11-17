@@ -58,7 +58,7 @@ if 'total_intake' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state.username = ""
 
-# Age data
+# Age data (from FA-1)
 age_data = {
     "4–8 years": {"ml": 1200, "cups": 5, "color": "#FF6B9D"},
     "9–13 years": {"ml": 1700, "cups": 7, "color": "#4DABF7"},
@@ -74,8 +74,8 @@ if st.session_state.step == "age_selection":
     cols = st.columns(4)
     for idx, (age, data) in enumerate(age_data.items()):
         with cols[idx]:
-            # Hidden Streamlit button
-            if st.button("", key=f"select_{age}"):
+            # Hidden button with unique key
+            if st.button("Select", key=f"age_{age.replace('–', '_').replace('+', 'plus')}"):
                 st.session_state.age_group = age
                 st.session_state.goal = data['ml']
                 st.session_state.step = "goal_slider"
@@ -84,7 +84,7 @@ if st.session_state.step == "age_selection":
             # Custom clickable div
             st.markdown(f"""
             <div class='age-btn' style='background:{data['color']};' 
-                 onclick="document.querySelector('button[kind=\"secondary\"][data-testid=\"baseButton-secondary\"][aria-label=\"{age}\"]').click();">
+                 onclick="parent.document.querySelector('button[kind=secondary]:nth-of30({idx+1})').click();">
                 <strong>{age}</strong><br>
                 ~{data['cups']} cups/day
             </div>
