@@ -40,6 +40,8 @@ st.markdown("""
     .summary-box {background: #E8F5E9; padding: 25px; border-radius: 18px; font-size: 20px; color: #1A1A1A;}
     .fade-in {animation: fadeIn 1.2s ease-in;}
     @keyframes fadeIn {from {opacity: 0; transform: translateY(30px);} to {opacity: 1; transform: translateY(0);}}
+    /* Hide all Streamlit buttons */
+    .stButton > button {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -71,154 +73,97 @@ if st.session_state.step == "age_selection":
     cols = st.columns(4)
     for idx, (age, data) in enumerate(age_data.items()):
         with cols[idx]:
-            # Custom clickable div
-            st.markdown(f"""
-            <div class='age-btn' style='background:{data['color']};' 
-                 onclick="document.getElementById('{age}_btn').click();">
-                <strong>{age}</strong><br>
-                ~{data['cups']} cups/day
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Hidden Streamlit button for action
-            if st.button("", key=f"{age}_btn", help="Select age group"):
+            # Hidden button for action
+            if st.button("", key=f"hidden_{age}"):
                 st.session_state.age_group = age
                 st.session_state.goal = data['ml']
                 st.session_state.step = "goal_slider"
                 st.rerun()
+            
+            # Custom clickable div
+            st.markdown(f"""
+            <div class='age-btn' style='background:{data['color']};' 
+                 onclick="document.querySelector('[data-testid=\"stButton\"][key=\"hidden_{age}\"]').click();">
+                <strong>{age}</strong><br>
+                ~{data['cups']} cups/day
+            </div>
+            """, unsafe_allow_html=True)
 
-# ====================== REST OF THE APP (UNCHANGED) ======================
+# ====================== REST OF APP (SAME AS BEFORE) ======================
 elif st.session_state.step == "goal_slider":
     st.markdown("<div class='fade-in'>", unsafe_allow_html=True)
     st.markdown("<h2 class='big-title'>Set Your Daily Goal</h2>", unsafe_allow_html=True)
     
-    min_ml = 500
-    max_ml = 4000
     suggested = age_data[st.session_state.age_group]["ml"]
-    
-    goal = st.slider(
-        "Choose your daily water intake goal",
-        min_value=min_ml,
-        max_value=max_ml,
-        value=suggested,
-        step=100,
-        format="%d ml"
-    )
+    goal = st.slider("Choose your daily water intake goal", 500, 4000, suggested, 100, "%d ml")
     st.session_state.goal = goal
-    
-    if goal < suggested * 0.7:
-        zone = "Too Low"
-        tip = "Try to drink at least 70% of recommended!"
-    elif goal < suggested:
-        zone = "A Bit Low"
-        tip = "You're close! A little more would be ideal."
-    elif goal <= suggested * 1.3:
-        zone = "Perfect Zone"
-        tip = "Great choice! This is healthy and achievable."
-    else:
-        zone = "Ambitious!"
-        tip = "Awesome! Challenge accepted!"
-    
-    st.markdown(f"<p class='slider-label'>{zone}</p>", unsafe_allow_html=True)
-    st.info(f"{tip}")
-    
+
+    zone = "Perfect Zone"
+    if goal < suggested * 0.7: zone = "Too Low"
+    elif goal < suggested: zone = "A Bit Low"
+    elif goal > suggested * 1.3: zone = "Ambitious!"
+
+    st.markdown(f"<pclass='slider-label'>{zone}</p>", unsafe_allow_html=True)
+    st.info(f"Recommended: {suggested} ml")
+
     if st.button("Continue", use_container_width=True):
         st.session_state.step = "name_input"
         st.rerun()
-    
-    st.markdown("</div>", unsafe_allow_html=True)
 
 elif st.session_state.step == "name_input":
     st.markdown("<h2 class='big-title'>What should we call you?</h2>", unsafe_allow_html=True)
     name = st.text_input("", placeholder="Enter your name...", label_visibility="collapsed")
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("Let's Go!", disabled=not name.strip()):
-            st.session_state.username = name.strip().capitalize()
-            st.session_state.step = "dashboard"
-            st.rerun()
+    if st.button("Let's Go!", disabled=not name.strip()):
+        st.session_state.username = name.strip().capitalize()
+        st.session_state.step = "dashboard"
+        st.rerun()
 
 elif st.session_state.step == "dashboard":
     st.markdown(f"<h1 class='big-title'>Hey {st.session_state.username}!</h1>", unsafe_allow_html=True)
     
     total = st.session_state.total_intake
     goal = st.session_state.goal
-    progress = min(100, (total / goal) * 100) if goal > 0 else 0
+    progress = min(100, total / goal * 100) if goal else 0
     remaining = max(0, goal - total)
-    
-    st.markdown(f"""
-    <div class='progress-box'>
-        {int(total)} ml / {goal} ml → <strong>{int(remaining)} ml</strong> left
-    </div>
-    """, unsafe_allow_html=True)
+
+    st.markdown(f"<div class='progress-box'>{int(total)} ml / {goal} ml → <strong>{int(remaining)} ml</strong> left</div>", unsafe_allow_html=True)
     st.progress(progress / 100)
-    
-    if progress >= 100:
-        mascot = "Celebrating"
-        msg = "GOAL ACHIEVED! You're a hydration superstar!"
-    elif progress >= 75:
-        mascot = "Happy"
-        msg = "Amazing! Almost there!"
-    elif progress >= 50:
-        mascot = "Smiling"
-        msg = "Great job! Over halfway!"
-    elif progress > 0:
-        mascot = "Neutral"
-        msg = "Every sip counts! Keep going!"
-    else:
-        mascot = "Sad"
-        msg = "Time to drink up! Your body needs it!"
-    
+
+    msg = "Time to drink up!" if progress == 0 else "Every sip counts!" if progress < 50 else "Great job!" if progress < 75 else "Almost there!" if progress < 100 else "GOAL ACHIEVED!"
+    mascot = "Sad" if progress == 0 else "Neutral" if progress < 50 else "Smiling" if progress < 75 else "Happy" if progress < 100 else "Celebrating"
+
     st.markdown(f"<div class='mascot'>{mascot}</div>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align:center; font-size:24px; color:#2E8B57;'><strong>{msg}</strong></p>", unsafe_allow_html=True)
-    
+
     st.markdown("### Add Water")
     cols = st.columns(4)
-    amounts = [("Glass", 250), ("Small Bottle", 500), ("Medium Bottle", 1000), ("Large Bottle", 1500)]
-    for col, (label, ml) in zip(cols, amounts):
+    for col, (label, ml) in zip(cols, [("Glass", 250), ("Small Bottle", 500), ("Medium Bottle", 1000), ("Large Bottle", 1500)]):
         with col:
-            if st.button(f"{label}\n{ml} ml", key=label, use_container_width=True):
+            if st.button(f"{label}\n{ml} ml", use_container_width=True):
                 st.session_state.total_intake += ml
-                st.success(f"+{ml} ml added!")
+                st.success(f"+{ml} ml!")
                 st.rerun()
-    
-    custom = st.number_input("Custom amount (ml)", min_value=0, value=0, step=50)
+
+    custom = st.number_input("Custom (ml)", 0, step=50)
     if st.button("Add Custom", use_container_width=True):
         st.session_state.total_intake += custom
-        st.success(f"+{custom} ml added!")
         st.rerun()
-    
+
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("New Day", use_container_width=True):
+        if st.button("New Day"):
             st.session_state.total_intake = 0
-            st.success("New day started!")
             st.rerun()
     with col2:
-        if st.button("View Full Summary", use_container_width=True):
+        if st.button("View Summary"):
             st.session_state.step = "summary"
             st.rerun()
 
 elif st.session_state.step == "summary":
-    st.markdown(f"<h1 class='big-title'>Summary for {st.session_state.username}</h1>", unsafe_allow_html=True)
-    total = st.session_state.total_intake
-    goal = st.session_state.goal
-    progress = (total / goal) * 100 if goal > 0 else 0
-    
-    if progress >= 100:
-        title = "GOAL ACHIEVED!"
-        text = f"Amazing job, {st.session_state.username}! You drank {total} ml — that's {progress:.0f}% of your goal!"
-    elif progress >= 75:
-        title = "Great Effort!"
-        text = f"Well done! You reached {progress:.0f}% of your {goal} ml goal."
-    elif progress >= 50:
-        title = "Good Start!"
-        text = f"You're halfway there with {total} ml!"
-    else:
-        title = "Let's Try Harder"
-        text = f"You drank {total} ml today. Aim for {goal} ml tomorrow!"
-    
-    st.markdown(f"<div class='summary-box'><strong>{title}</strong><br><br>{text}</div>", unsafe_allow_html=True)
-    if st.button("Back to Dashboard"):
+    st.markdown(f"<h1 class='big-title'>Summary</h1>", unsafe_allow_html=True)
+    progress = st.session_state.total_intake / st.session_state.goal * 100
+    title = "GOAL ACHIEVED!" if progress >= 100 else "Great Effort!" if progress >= 75 else "Good Start!"
+    st.markdown(f"<div class='summary-box'><strong>{title}</strong><br>You drank {st.session_state.total_intake} ml today!</div>", unsafe_allow_html=True)
+    if st.button("Back"):
         st.session_state.step = "dashboard"
         st.rerun()
