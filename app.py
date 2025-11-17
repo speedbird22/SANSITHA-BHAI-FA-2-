@@ -20,78 +20,144 @@ HYDRATION_TIPS = [
 
 # -------------------------------
 # Initialize session state
+if "phase" not in st.session_state:
+    st.session_state.phase = 1
+if "age_group" not in st.session_state:
+    st.session_state.age_group = None
 if "goal" not in st.session_state:
     st.session_state.goal = 0
 if "total" not in st.session_state:
     st.session_state.total = 0
+if "log_pref" not in st.session_state:
+    st.session_state.log_pref = "quick"
+if "show_tips" not in st.session_state:
+    st.session_state.show_tips = True
+if "mascot_on" not in st.session_state:
+    st.session_state.mascot_on = True
 
 # -------------------------------
-# App Title
-st.title("💧 WaterBuddy: Your Daily Hydration Companion")
-
-st.write("Track your hydration, get friendly feedback, and build healthier habits!")
-
-# -------------------------------
-# Age group selection
-age_group = st.selectbox("Select your age group:", list(AGE_GROUPS.keys()))
-default_goal = AGE_GROUPS[age_group]
-
-# Allow manual adjustment
-st.session_state.goal = st.number_input(
-    "Your daily water goal (ml):",
-    min_value=500,
-    max_value=4000,
-    value=default_goal,
-    step=100
-)
-
-# -------------------------------
-# Logging intake
-col1, col2 = st.columns(2)
-
-with col1:
-    if st.button("+250 ml"):
-        st.session_state.total += 250
-
-with col2:
-    manual_amount = st.number_input("Log custom amount (ml):", min_value=0, step=50)
-    if st.button("Add custom amount"):
-        st.session_state.total += manual_amount
+# Custom CSS for colorful background & buttons
+st.markdown("""
+    <style>
+    body {
+        background: linear-gradient(to right, #4FD1C5, #60A5FA);
+    }
+    .stButton>button {
+        background-color: #60A5FA;
+        color: white;
+        border-radius: 12px;
+        font-size: 18px;
+        padding: 10px 20px;
+    }
+    .stButton>button:hover {
+        background-color: #2563EB;
+        color: white;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # -------------------------------
-# Reset button
-if st.button("🔄 New Day (Reset)"):
-    st.session_state.total = 0
+# Phase 1: Welcome
+if st.session_state.phase == 1:
+    st.title("💧 Welcome to WaterBuddy")
+    st.write("Your friendly daily hydration companion.")
+    if st.button("Let's begin 💧"):
+        st.session_state.phase = 2
 
 # -------------------------------
-# Calculations
-remaining = max(st.session_state.goal - st.session_state.total, 0)
-progress = min(st.session_state.total / st.session_state.goal, 1.0)
+# Phase 2: Age selection
+elif st.session_state.phase == 2:
+    st.header("Step 1: Select your age group")
+    for group, ml in AGE_GROUPS.items():
+        if st.button(group):
+            st.session_state.age_group = group
+            st.session_state.goal = ml
+            st.session_state.phase = 3
 
 # -------------------------------
-# Visual feedback
-st.progress(progress)
-
-st.write(f"**Total intake so far:** {st.session_state.total} ml")
-st.write(f"**Remaining to goal:** {remaining} ml")
-st.write(f"**Progress:** {progress*100:.1f}%")
-
-# -------------------------------
-# Motivational messages & mascot
-if progress == 0:
-    st.info("Let's start hydrating! 🚰")
-elif progress < 0.5:
-    st.info("Good start! Keep sipping 💦")
-elif progress < 0.75:
-    st.success("Nice! You're halfway there 😃")
-elif progress < 1.0:
-    st.success("Almost at your goal! 🌊")
-else:
-    st.balloons()
-    st.success("🎉 Congratulations! You hit your hydration goal!")
+# Phase 3: Goal confirmation
+elif st.session_state.phase == 3:
+    st.header("Step 2: Confirm or adjust your daily goal")
+    st.write(f"Recommended goal for {st.session_state.age_group}: {AGE_GROUPS[st.session_state.age_group]} ml")
+    st.session_state.goal = st.number_input(
+        "Your daily water goal (ml):",
+        min_value=500,
+        max_value=4000,
+        value=AGE_GROUPS[st.session_state.age_group],
+        step=100
+    )
+    if st.button("Continue ➡️"):
+        st.session_state.phase = 4
 
 # -------------------------------
-# Random hydration tip
-st.write("---")
-st.write("💡 Tip of the day:")
-st.write(random.choice(HYDRATION_TIPS))
+# Phase 4: Logging preference
+elif st.session_state.phase == 4:
+    st.header("Step 3: Choose your logging preference")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Quick log (+250 ml)"):
+            st.session_state.log_pref = "quick"
+            st.session_state.phase = 5
+    with col2:
+        if st.button("Custom entry"):
+            st.session_state.log_pref = "custom"
+            st.session_state.phase = 5
+
+# -------------------------------
+# Phase 5: Optional settings
+elif st.session_state.phase == 5:
+    st.header("Step 4: Personalize your experience")
+    st.session_state.show_tips = st.checkbox("Show daily hydration tips", value=True)
+    st.session_state.mascot_on = st.checkbox("Enable mascot reactions", value=True)
+    if st.button("Finish setup ✅"):
+        st.session_state.phase = 6
+
+# -------------------------------
+# Phase 6: Dashboard
+elif st.session_state.phase == 6:
+    st.title("📊 WaterBuddy Dashboard")
+    st.write(f"**Age group:** {st.session_state.age_group}")
+    st.write(f"**Daily goal:** {st.session_state.goal} ml")
+
+    # Logging intake
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("+250 ml"):
+            st.session_state.total += 250
+    with col2:
+        manual_amount = st.number_input("Log custom amount (ml):", min_value=0, step=50)
+        if st.button("Add custom amount"):
+            st.session_state.total += manual_amount
+
+    # Reset
+    if st.button("🔄 New Day (Reset)"):
+        st.session_state.total = 0
+
+    # Calculations
+    remaining = max(st.session_state.goal - st.session_state.total, 0)
+    progress = min(st.session_state.total / st.session_state.goal, 1.0)
+
+    st.progress(progress)
+    st.write(f"**Total intake so far:** {st.session_state.total} ml")
+    st.write(f"**Remaining to goal:** {remaining} ml")
+    st.write(f"**Progress:** {progress*100:.1f}%")
+
+    # Motivational messages
+    if st.session_state.mascot_on:
+        if progress == 0:
+            st.info("Let's start hydrating! 🚰")
+        elif progress < 0.5:
+            st.info("Good start! Keep sipping 💦")
+        elif progress < 0.75:
+            st.success("Nice! You're halfway there 😃")
+        elif progress < 1.0:
+            st.success("Almost at your goal! 🌊")
+        else:
+            st.balloons()
+            st.success("🎉 Congratulations! You hit your hydration goal!")
+
+    # Tips
+    if st.session_state.show_tips:
+        st.write("---")
+        st.write("💡 Tip of the day:")
+        st.write(random.choice(HYDRATION_TIPS))
